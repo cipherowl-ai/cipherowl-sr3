@@ -6,6 +6,7 @@ Public CLI for CipherOwl blockchain address screening, risk analysis, and compli
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
 ## Usage
@@ -19,7 +20,9 @@ cipherowl-sr3 --help             # see all commands
 ## Generate a skill for Claude Code
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh && cipherowl-sr3 --agent-info | claude -p "/skill-creator create a skill from this --agent-info output"
+claude -p "$(cipherowl-sr3 --agent-info)
+
+/skill-creator create a skill from this --agent-info output"
 ```
 
 ---
