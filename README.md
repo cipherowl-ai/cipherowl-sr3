@@ -18,13 +18,32 @@ cipherowl-sr3 screen <address>   # screen an address for risk
 cipherowl-sr3 --help             # see all commands
 ```
 
-## Generate a skill for Claude Code
+## Generate a skill for your AI coding agent
+
+### Claude Code
 
 ```bash
 claude -p "$($HOME/.local/bin/cipherowl-sr3 --agent-info)
 
 /skill-creator create a skill from this --agent-info output"
 ```
+
+### Codex (OpenAI)
+
+```bash
+codex -p "$($HOME/.local/bin/cipherowl-sr3 --agent-info)
+
+Create an agent tool/skill from this CLI --agent-info output"
+```
+
+### OpenClaw / other agents
+
+```bash
+$HOME/.local/bin/cipherowl-sr3 --agent-info > /tmp/sr3-agent-info.md
+# Feed /tmp/sr3-agent-info.md to your agent's skill/tool creation workflow
+```
+
+The `--agent-info` flag outputs a structured guide with commands, examples, expected output, and metadata that any AI agent can use to generate a tool integration.
 
 ---
 
