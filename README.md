@@ -19,7 +19,7 @@ cipherowl-sr3 screen <address>         # screen an address for risk
 cipherowl-sr3 reason breakdown <addr>  # risk breakdown by type
 cipherowl-sr3 metadata labels <addr>   # address labels/tags
 cipherowl-sr3 detect <address>         # detect chain (no auth needed)
-cipherowl-sr3 --help                   # see all commands
+$HOME/.local/bin/cipherowl-sr3 --help                   # see all commands
 ```
 
 ## What it does
@@ -40,7 +40,7 @@ Supports 12 chains: EVM, Tron, Bitcoin, Litecoin, Bitcoin Cash, Dash, Dogecoin, 
 The CLI is designed for AI agent consumption: JSON output by default, structured error codes, `--agent-info` for full machine-readable documentation.
 
 ```bash
-cipherowl-sr3 --agent-info    # full guide with schemas, examples, and expected output
+$HOME/.local/bin/cipherowl-sr3 --agent-info    # full guide with schemas, examples, and expected output
 ```
 
 ### Generate a skill for your AI coding agent
@@ -48,8 +48,8 @@ cipherowl-sr3 --agent-info    # full guide with schemas, examples, and expected 
 Give your agent this prompt:
 
 ```
-cipherowl-sr3 --help
-cipherowl-sr3 --agent-info
+$HOME/.local/bin/cipherowl-sr3 --help
+$HOME/.local/bin/cipherowl-sr3 --agent-info
 
 Create a skill/tool integration from this CLI's capabilities.
 ```
