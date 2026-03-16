@@ -4,13 +4,13 @@
 #
 # Environment variables:
 #   VERSION   - specific version to install (default: latest)
-#   INSTALL_DIR - installation directory (default: /usr/local/bin)
+#   INSTALL_DIR - installation directory (default: ~/.local/bin)
 
 set -e
 
 REPO="cipherowl-ai/cipherowl-sr3"
 BINARY="cipherowl-sr3"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 
 # Detect OS
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -73,16 +73,24 @@ else
 fi
 
 # Install
+mkdir -p "$INSTALL_DIR"
 chmod +x "$TMP"
-if [ -w "$INSTALL_DIR" ]; then
-    mv "$TMP" "${INSTALL_DIR}/${BINARY}"
-else
-    echo "Need sudo to install to ${INSTALL_DIR}/"
-    sudo mv "$TMP" "${INSTALL_DIR}/${BINARY}"
-fi
+mv "$TMP" "${INSTALL_DIR}/${BINARY}"
 
 echo ""
 echo "Installed ${BINARY} ${VERSION} to ${INSTALL_DIR}/${BINARY}"
+
+# Check if INSTALL_DIR is in PATH
+case ":$PATH:" in
+    *":${INSTALL_DIR}:"*) ;;
+    *)
+        echo ""
+        echo "NOTE: ${INSTALL_DIR} is not in your PATH. Add it with:"
+        echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
+        echo "  echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.bashrc"
+        ;;
+esac
+
 echo ""
 echo "Get started:"
 echo "  ${BINARY} login              # authenticate via browser"
