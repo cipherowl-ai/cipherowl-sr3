@@ -77,23 +77,23 @@ mkdir -p "$INSTALL_DIR"
 chmod +x "$TMP"
 mv "$TMP" "${INSTALL_DIR}/${BINARY}"
 
+INSTALLED="${INSTALL_DIR}/${BINARY}"
 echo ""
-echo "Installed ${BINARY} ${VERSION} to ${INSTALL_DIR}/${BINARY}"
+echo "Installed ${BINARY} ${VERSION} to ${INSTALLED}"
 
-# Check if INSTALL_DIR is in PATH
+# Add to PATH permanently if not already there
+SHELL_RC="$HOME/.bashrc"
+[ -f "$HOME/.zshrc" ] && SHELL_RC="$HOME/.zshrc"
 case ":$PATH:" in
     *":${INSTALL_DIR}:"*) ;;
     *)
-        echo ""
-        echo "NOTE: ${INSTALL_DIR} is not in your PATH. Add it with:"
-        echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
-        echo "  echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.bashrc"
+        echo "export PATH=\"${INSTALL_DIR}:\$PATH\"" >> "$SHELL_RC"
+        echo "Added ${INSTALL_DIR} to PATH in ${SHELL_RC} (restart shell or run: source ${SHELL_RC})"
         ;;
 esac
 
 echo ""
 echo "Get started:"
-echo "  ${BINARY} login              # authenticate via browser"
-echo "  ${BINARY} doctor             # verify connectivity"
-echo "  ${BINARY} screen <address>   # screen an address"
-echo "  ${BINARY} --help             # see all commands"
+echo "  ${INSTALLED} login              # authenticate via browser"
+echo "  ${INSTALLED} screen <address>   # screen an address"
+echo "  ${INSTALLED} --help             # see all commands"
