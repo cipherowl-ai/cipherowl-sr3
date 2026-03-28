@@ -9,6 +9,7 @@ curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scri
 ```
 
 Installs to `~/.local/bin/` and adds it to your PATH automatically.
+Restart your shell (or run `source ~/.bashrc` / `source ~/.zshrc`) so the new PATH takes effect.
 
 ## Quick Start
 
@@ -59,7 +60,7 @@ cipherowl-sr3 screen <addr> -q           # suppress output, exit code only
 cipherowl-sr3 screen <addr> -o out.json  # write results to file, show progress on stdout
 ```
 
-All commands return a JSON envelope with `status` field: `SUCCESS`, `NO_RESULTS`, or `ERROR`.
+In the default JSON mode, all commands return an envelope with `status` field: `SUCCESS`, `NO_RESULTS`, or `ERROR`. Other formats (`-f simple`, `-f table`, `-q`) use their own layout.
 
 ## Authentication
 
