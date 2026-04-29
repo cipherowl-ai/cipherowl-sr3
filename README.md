@@ -42,13 +42,17 @@ cipherowl-sr3 --help                   # see all commands
 
 ### Authentication
 
-Three modes, checked in order:
+Two modes, checked in order. Both auto-refresh access tokens — there is no static-token shortcut.
 
 | Mode | Setup | Best for |
 |------|-------|----------|
-| **Static token** | `export CO_TOKEN=<jwt>` | CI/CD, scripting |
-| **OAuth2 M2M** | `export CIPHEROWL_CLIENT_ID=… CIPHEROWL_CLIENT_SECRET=…` | Server-to-server |
+| **OAuth2 M2M** | `export CIPHEROWL_CLIENT_ID=… CIPHEROWL_CLIENT_SECRET=…` | Server-to-server, CI/CD |
 | **Interactive login** | `cipherowl-sr3 login` | Day-to-day use (recommended) |
+
+> Earlier releases honored a `CO_TOKEN` env var as a static-JWT shortcut. That path
+> has no in-band refresh — long-lived processes (like the MCP server, below)
+> eventually stall with no recovery, so it was removed. Run `cipherowl-sr3 login`
+> once and the session refreshes silently for weeks.
 
 ### Output Formats
 
@@ -67,6 +71,99 @@ cipherowl-sr3 update --check      # check without installing
 
 ---
 
+## MCP Server (Claude, Codex, Cursor, OpenCode)
+
+Run `cipherowl-sr3` as a [Model Context Protocol](https://modelcontextprotocol.io)
+server so your favorite AI agent can screen addresses, query metadata, and run
+risk-reason analysis as native tools — no shell-out, no scripting glue.
+
+```bash
+cipherowl-sr3 mcp                       # run as an MCP server over stdio
+cipherowl-sr3 mcp --print-config=<host> # emit a copy-pasteable install snippet
+```
+
+**Tools exposed (Phase 1):** `screen`, `batch_screen`, `reason_risk`, `reason_exposures`, `metadata_labels`, `metadata_entities`, `capabilities`, `detect`. All read-only. Output is byte-for-byte identical to `cipherowl-sr3 ... -f json`, including `request_id` for correlation with server logs.
+
+### One-time setup
+
+```bash
+cipherowl-sr3 login    # device-flow auth — refresh handled automatically
+```
+
+The MCP server reads `~/.cipherowl/credentials.json` and refreshes access tokens silently. Re-run `login` only when you see `not authenticated. Run 'cipherowl-sr3 login'` (~weeks-to-months in practice).
+
+### Wire into a host
+
+Pick yours. `--print-config=<host>` produces the right shape for each:
+
+#### Claude Desktop
+`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "cipherowl-sr3": {
+      "command": "/Users/you/.local/bin/cipherowl-sr3",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+```bash
+cipherowl-sr3 mcp --print-config=claude-desktop   # generates the snippet above
+```
+
+#### Claude Code
+
+```bash
+$(cipherowl-sr3 mcp --print-config=claude-code)
+# expands to: claude mcp add cipherowl-sr3 -s user -- /path/to/cipherowl-sr3 mcp
+```
+
+#### Codex CLI
+
+```bash
+$(cipherowl-sr3 mcp --print-config=codex)
+# expands to: codex mcp add cipherowl-sr3 -- /path/to/cipherowl-sr3 mcp
+```
+
+> **Codex sandbox note:** Codex's default sandbox blocks home-dir reads, so the MCP
+> server can't reach `~/.cipherowl/credentials.json`. Run with
+> `--sandbox danger-full-access` or add a sandbox read-mount for `~/.cipherowl`.
+
+#### Cursor
+Settings → MCP, or `~/.cursor/mcp.json` (same JSON shape as Claude Desktop).
+
+#### OpenCode
+`~/.config/opencode/opencode.json`:
+
+```json
+{
+  "mcp": {
+    "cipherowl-sr3": {
+      "type": "local",
+      "command": ["/path/to/cipherowl-sr3", "mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+```bash
+cipherowl-sr3 mcp --print-config=opencode   # generates the snippet above
+```
+
+### Verify it's wired
+
+Ask your agent:
+
+> Use the cipherowl-sr3 `screen` tool on `0x296A0E3CE9f346033d21DD85282f5a1cfdbc4474` and report `foundRisk` verbatim.
+
+Expected: `true` (this is a known illicit address). Use `0x202f3e2934067181cf9e35af508d682525b17b4c` to confirm `false` for a clean one.
+
+---
+
 ## For AI Agents
 
 > **Building an AI agent that screens blockchain addresses?** This section is for you.
@@ -79,9 +176,8 @@ curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scri
 export PATH="$HOME/.local/bin:$PATH"
 
 # Authenticate (pick one)
-export CO_TOKEN="<your-jwt>"                                          # Option A: static token
-export CIPHEROWL_CLIENT_ID="…" CIPHEROWL_CLIENT_SECRET="…"          # Option B: OAuth2 M2M
-cipherowl-sr3 login                                                   # Option C: ask the human to run this
+export CIPHEROWL_CLIENT_ID="…" CIPHEROWL_CLIENT_SECRET="…"          # Option A: OAuth2 M2M (auto-refreshes)
+cipherowl-sr3 login                                                   # Option B: ask the human to run this once
 
 # Verify
 cipherowl-sr3 doctor
