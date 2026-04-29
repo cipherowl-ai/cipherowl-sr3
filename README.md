@@ -49,11 +49,6 @@ Two modes, checked in order. Both auto-refresh access tokens — there is no sta
 | **OAuth2 M2M** | `export CIPHEROWL_CLIENT_ID=… CIPHEROWL_CLIENT_SECRET=…` | Server-to-server, CI/CD |
 | **Interactive login** | `cipherowl-sr3 login` | Day-to-day use (recommended) |
 
-> Earlier releases honored a `CO_TOKEN` env var as a static-JWT shortcut. That path
-> has no in-band refresh — long-lived processes (like the MCP server, below)
-> eventually stall with no recovery, so it was removed. Run `cipherowl-sr3 login`
-> once and the session refreshes silently for weeks.
-
 ### Output Formats
 
 ```bash
