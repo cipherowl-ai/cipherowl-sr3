@@ -1,6 +1,6 @@
 #!/bin/sh
 # Install script for cipherowl-sr3 CLI
-# Usage: curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/install.sh | sh
+# Usage: curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
 #
 # Environment variables:
 #   VERSION   - specific version to install (default: latest)
