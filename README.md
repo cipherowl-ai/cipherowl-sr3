@@ -181,7 +181,7 @@ cipherowl-sr3 doctor
 Pin a version in CI:
 
 ```bash
-VERSION=260421.0b69582 curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
+VERSION=2026.1.0 curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
 ```
 
 ### Agent Guide
