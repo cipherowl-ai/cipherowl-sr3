@@ -2,9 +2,9 @@
 
 CLI for the [CipherOwl SR³ API](https://readme.cipherowl.ai) — blockchain address screening, risk analysis, and compliance tooling.
 
-Requires a [CipherOwl subscription](https://cipherowl.ai). Supports **12 chains**: EVM (Ethereum, BSC, Polygon, Arbitrum, …), Tron, Bitcoin, Litecoin, Bitcoin Cash, Dash, Dogecoin, XRP, Solana, TON, Zcash.
+Requires a [CipherOwl subscription](https://cipherowl.ai). Covers EVM networks (Ethereum, BSC, Polygon, Arbitrum, …), Bitcoin and its forks, Tron, Solana, XRP, TON and more; run `cipherowl-sr3 auth capabilities` for the current list.
 
-> **Read-only & safe.** Every command is a query — nothing writes to any database or mutates backend state. Safe to run in automated pipelines.
+> **Read-only by default.** Screening, risk analysis and research are queries that change no CipherOwl data. Only `--track-alert` (on `screen address` or `screen batch`) and the `case` write commands (`create`, `update`, `add-screening`, `review`, `resolve`, `mute`, `reopen`, `delete --dry-run=false`) change state. The CLI also writes local files: under `~/.cipherowl`, wherever `-o` points, and its own binary on `update`.
 
 ---
 
@@ -13,24 +13,27 @@ Requires a [CipherOwl subscription](https://cipherowl.ai). Supports **12 chains*
 ### Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
+curl -fsSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
 ```
 
-Installs to `~/.local/bin/`. Restart your shell so the new PATH takes effect.
+Installs to `~/.local/bin/` and does not edit your shell profile. If that directory is not on your `PATH`, add `export PATH="$HOME/.local/bin:$PATH"` to your shell rc, or call the binary by its full path.
 
 Works on macOS (Intel / Apple Silicon) and Linux (amd64 / arm64).
 
 ### Quick Start
 
 ```bash
-cipherowl-sr3 login                    # authenticate via browser
-cipherowl-sr3 doctor                   # verify connectivity
-cipherowl-sr3 screen <address>         # screen an address for risk
-cipherowl-sr3 reason breakdown <addr>  # risk breakdown by category
-cipherowl-sr3 metadata labels <addr>   # address labels/tags
-cipherowl-sr3 detect <address>         # detect chain (no auth needed)
-cipherowl-sr3 --help                   # see all commands
+cipherowl-sr3 auth login                                        # authenticate via browser
+cipherowl-sr3 doctor                                            # verify connectivity
+cipherowl-sr3 screen configs                                    # risk configurations you can use
+cipherowl-sr3 screen address <address> --risk-config <config>   # screen an address for risk
+cipherowl-sr3 reason breakdown <addr> --risk-config <config>    # risk breakdown by category
+cipherowl-sr3 research labels <addr>                            # address labels/tags
+cipherowl-sr3 research detect <address>                         # detect chain (no auth needed)
+cipherowl-sr3 --help                                            # see all commands
 ```
+
+Always pass `--risk-config` to `screen address`, `screen batch`, `reason risk|detail|breakdown|exposures` and `report risk-assessment|graph|sar`, and `risk_config` to the MCP `screen`, `batch_screen`, `reason_risk` and `reason_exposures` tools. In 2026.8.0, if you omit it and neither `CIPHEROWL_CONFIG` nor a saved default is set, the CLI saves `co-defi` to `~/.cipherowl/cipherowl-sr3_config` (`config show` does too), and every later call that omits it, MCP tools included, uses that saved value.
 
 ### Key Features
 
@@ -47,14 +50,14 @@ Two modes, checked in order. Both auto-refresh access tokens — there is no sta
 | Mode | Setup | Best for |
 |------|-------|----------|
 | **OAuth2 M2M** | `export CIPHEROWL_CLIENT_ID=… CIPHEROWL_CLIENT_SECRET=…` | Server-to-server, CI/CD |
-| **Interactive login** | `cipherowl-sr3 login` | Day-to-day use (recommended) |
+| **Interactive login** | `cipherowl-sr3 auth login` | Day-to-day use (recommended) |
 
 ### Output Formats
 
 ```bash
-cipherowl-sr3 screen <addr>              # JSON (default)
-cipherowl-sr3 screen <addr> -f table     # human-readable columns
-cipherowl-sr3 screen <addr> -q           # exit code only
+cipherowl-sr3 screen address <addr> --risk-config <config>              # JSON (default)
+cipherowl-sr3 screen address <addr> --risk-config <config> -f table     # human-readable columns
+cipherowl-sr3 screen address <addr> --risk-config <config> -q           # exit code only: 0 = call succeeded, not "clean"
 ```
 
 ### Keeping Up to Date
@@ -73,19 +76,19 @@ server so your favorite AI agent can screen addresses, query metadata, and run
 risk-reason analysis as native tools — no shell-out, no scripting glue.
 
 ```bash
-cipherowl-sr3 mcp                       # run as an MCP server over stdio
-cipherowl-sr3 mcp --print-config=<host> # emit a copy-pasteable install snippet
+cipherowl-sr3 agent mcp                       # run as an MCP server over stdio
+cipherowl-sr3 agent mcp --print-config=<host> # emit a copy-pasteable install snippet
 ```
 
-**Tools exposed (Phase 1):** `screen`, `batch_screen`, `reason_risk`, `reason_exposures`, `metadata_labels`, `metadata_entities`, `capabilities`, `detect`. All read-only. Output is byte-for-byte identical to `cipherowl-sr3 ... -f json`, including `request_id` for correlation with server logs.
+**Tools exposed:** `capabilities`, `detect`, `screen`, `batch_screen`, `reason_risk`, `reason_exposures`, `metadata_labels`, `metadata_entities`, plus read-only Simple Case tools (`case_list`, `case_get`, `case_screenings`, `case_evidence`, `case_notes`, `case_audit`). All read-only; the `case_*` tools need case-management access (without it they return `FORBIDDEN`). Pass `risk_config` explicitly to the screening and reason tools (see the note under Quick Start). Output uses the same envelope as `cipherowl-sr3 ... -f json`, including `request_id` for correlation with server logs; address results also carry a `links` field.
 
 ### One-time setup
 
 ```bash
-cipherowl-sr3 login    # device-flow auth — refresh handled automatically
+cipherowl-sr3 auth login    # browser login; refresh handled automatically
 ```
 
-The MCP server reads `~/.cipherowl/credentials.json` and refreshes access tokens silently. Re-run `login` only when you see `not authenticated. Run 'cipherowl-sr3 login'` (~weeks-to-months in practice).
+The MCP server reads `~/.cipherowl/credentials.json` and refreshes access tokens silently. Re-run `auth login` when a command or tool reports `not authenticated`, `session expired` or `authorization expired`, or when `cipherowl-sr3 doctor` fails its auth check (~weeks-to-months in practice).
 
 ### Wire into a host
 
@@ -99,33 +102,34 @@ Pick yours. `--print-config=<host>` produces the right shape for each:
   "mcpServers": {
     "cipherowl-sr3": {
       "command": "/Users/you/.local/bin/cipherowl-sr3",
-      "args": ["mcp"]
+      "args": ["agent", "mcp"]
     }
   }
 }
 ```
 
 ```bash
-cipherowl-sr3 mcp --print-config=claude-desktop   # generates the snippet above
+cipherowl-sr3 agent mcp --print-config=claude-desktop   # generates the snippet above
 ```
 
 #### Claude Code
 
 ```bash
-$(cipherowl-sr3 mcp --print-config=claude-code)
-# expands to: claude mcp add cipherowl-sr3 -s user -- /path/to/cipherowl-sr3 mcp
+eval "$(cipherowl-sr3 agent mcp --print-config=claude-code)"
+# runs: claude mcp add cipherowl-sr3 -s user -- '/path/to/cipherowl-sr3' agent mcp
 ```
 
 #### Codex CLI
 
 ```bash
-$(cipherowl-sr3 mcp --print-config=codex)
-# expands to: codex mcp add cipherowl-sr3 -- /path/to/cipherowl-sr3 mcp
+eval "$(cipherowl-sr3 agent mcp --print-config=codex)"
+# runs: codex mcp add cipherowl-sr3 -- '/path/to/cipherowl-sr3' agent mcp
 ```
 
-> **Codex sandbox note:** Codex's default sandbox blocks home-dir reads, so the MCP
-> server can't reach `~/.cipherowl/credentials.json`. Run with
-> `--sandbox danger-full-access` or add a sandbox read-mount for `~/.cipherowl`.
+> **Sandbox note (Codex, OpenCode):** a default sandbox can block access to `~/.cipherowl`,
+> so the MCP server can't authenticate (symptom: "user cancelled MCP tool call" with no error).
+> Give the server read-write access to `~/.cipherowl` (it saves refreshed tokens there)
+> rather than switching the whole session to a full-access sandbox.
 
 #### Cursor
 Settings → MCP, or `~/.cursor/mcp.json` (same JSON shape as Claude Desktop).
@@ -138,7 +142,7 @@ Settings → MCP, or `~/.cursor/mcp.json` (same JSON shape as Claude Desktop).
   "mcp": {
     "cipherowl-sr3": {
       "type": "local",
-      "command": ["/path/to/cipherowl-sr3", "mcp"],
+      "command": ["/path/to/cipherowl-sr3", "agent", "mcp"],
       "enabled": true
     }
   }
@@ -146,33 +150,35 @@ Settings → MCP, or `~/.cursor/mcp.json` (same JSON shape as Claude Desktop).
 ```
 
 ```bash
-cipherowl-sr3 mcp --print-config=opencode   # generates the snippet above
+cipherowl-sr3 agent mcp --print-config=opencode   # generates the snippet above
 ```
 
 ### Verify it's wired
 
 Ask your agent:
 
-> Use the cipherowl-sr3 `screen` tool on `0x296A0E3CE9f346033d21DD85282f5a1cfdbc4474` and report `foundRisk` verbatim.
+> Use the cipherowl-sr3 `screen` tool on `0x296A0E3CE9f346033d21DD85282f5a1cfdbc4474` with risk_config `<config>` and report `foundRisk` verbatim.
 
-Expected: `true` (this is a known illicit address). Use `0x202f3e2934067181cf9e35af508d682525b17b4c` to confirm `false` for a clean one.
+Replace `<config>` with a name from `cipherowl-sr3 screen configs --chain evm`. Expected: `true` (this is a known illicit address). `0x202f3e2934067181cf9e35af508d682525b17b4c` should return `false`, meaning no risk found under that configuration.
 
 ---
 
 ## For AI Agents
 
 > **Building an AI agent that screens blockchain addresses?** This section is for you.
+>
+> **Agents setting themselves up:** read and follow https://cipherowl.com/skills.md. It covers install, sign-in, MCP wiring and verification step by step, and can be saved as a skill.
 
 ### Install (Non-Interactive)
 
 ```bash
 # Install
-curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
+curl -fsSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
 # Authenticate (pick one)
 export CIPHEROWL_CLIENT_ID="…" CIPHEROWL_CLIENT_SECRET="…"          # Option A: OAuth2 M2M (auto-refreshes)
-cipherowl-sr3 login                                                   # Option B: ask the human to run this once
+cipherowl-sr3 auth login                                              # Option B: ask the human to run this once
 
 # Verify
 cipherowl-sr3 doctor
@@ -181,7 +187,7 @@ cipherowl-sr3 doctor
 Pin a version in CI:
 
 ```bash
-VERSION=2026.1.0 curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | sh
+curl -fsSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | VERSION=2026.8.0 sh   # VERSION goes on the sh side
 ```
 
 ### Agent Guide
@@ -189,7 +195,7 @@ VERSION=2026.1.0 curl -sSL https://raw.githubusercontent.com/cipherowl-ai/cipher
 The CLI ships a comprehensive machine-readable reference:
 
 ```bash
-cipherowl-sr3 --agent-info    # ~630 lines: schemas, examples, error codes, exit semantics
+cipherowl-sr3 --agent-info    # ~110 lines: commands, contracts, exit codes, rules for agents
 ```
 
 **Start here.** It has everything you need for tool integration.
@@ -199,10 +205,10 @@ cipherowl-sr3 --agent-info    # ~630 lines: schemas, examples, error codes, exit
 All commands return a consistent envelope:
 
 ```json
-{ "status": "SUCCESS | NO_RESULTS | ERROR", "data": { ... } }
+{ "status": "SUCCESS | NO_RESULTS | PARTIAL | ERROR", "data": { ... } }
 ```
 
-Exit codes: `0` = OK, `1` = error. Use `-q` for exit-code-only mode.
+Exit codes: `SUCCESS` and `NO_RESULTS` exit `0`; `ERROR` exits `1`. `PARTIAL` means usable but incomplete data (some items failed, or more pages remain) and usually exits `1`. Branch on `status`, never on the exit code alone. `-q` (exit code only) cannot tell a risky address from a clean one: `screen` exits `0` either way.
 
 ### Generate a Skill for Your Agent
 
@@ -215,6 +221,8 @@ Then prompt your coding agent:
 
 > Read the output of `cipherowl-sr3 --help` and `cipherowl-sr3 --agent-info`.
 > Create a tool/skill integration for blockchain address screening using this CLI.
+
+Or start from the ready-made skill at https://cipherowl.com/skills.md.
 
 Works with Claude Code, Codex, or any agent that can run shell commands.
 
