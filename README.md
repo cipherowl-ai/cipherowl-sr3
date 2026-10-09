@@ -26,14 +26,15 @@ Works on macOS (Intel / Apple Silicon) and Linux (amd64 / arm64).
 cipherowl-sr3 auth login                                        # authenticate via browser
 cipherowl-sr3 doctor                                            # verify connectivity
 cipherowl-sr3 screen configs                                    # risk configurations you can use
-cipherowl-sr3 screen address <address> --risk-config <config>   # screen an address for risk
-cipherowl-sr3 reason breakdown <addr> --risk-config <config>    # risk breakdown by category
+cipherowl-sr3 screen address <address>                          # screen an address for risk
+cipherowl-sr3 reason breakdown <addr>                           # risk breakdown by category
 cipherowl-sr3 research labels <addr>                            # address labels/tags
+cipherowl-sr3 research metadata <addr> --chain eth               # labels/entities/tags with notes and curation history
 cipherowl-sr3 research detect <address>                         # detect chain (no auth needed)
 cipherowl-sr3 --help                                            # see all commands
 ```
 
-Always pass `--risk-config` to `screen address`, `screen batch`, `reason risk|detail|breakdown|exposures` and `report risk-assessment|graph|sar`, and `risk_config` to the MCP `screen`, `batch_screen`, `reason_risk` and `reason_exposures` tools. In 2026.8.0, if you omit it and neither `CIPHEROWL_CONFIG` nor a saved default is set, the CLI saves `co-defi` to `~/.cipherowl/cipherowl-sr3_config` (`config show` does too), and every later call that omits it, MCP tools included, uses that saved value.
+Without `--risk-config` (MCP: `risk_config`), `CIPHEROWL_CONFIG` or a saved config, the server applies your organization's default risk configuration; `screen` and `reason risk|detail|breakdown` name it in `data.config`. Pass `--risk-config` when a result must be attributable to a specific configuration (`reason exposures` and `report` do not say which one applied). Releases before 2026.11.0 silently saved `co-defi` as the default the first time it was omitted; clear an unwanted saved value with `cipherowl-sr3 config unset risk-config`.
 
 ### Key Features
 
@@ -41,7 +42,7 @@ Always pass `--risk-config` to `screen address`, `screen batch`, `reason risk|de
 - **Risk analysis** — structured breakdowns by category, direction, and exposure
 - **AI-powered** — LLM transaction explanations, evidence classification, multi-source address identification
 - **Compliance reports** — risk assessments, graph visualizations, SAR generation
-- **Address enrichment** — labels, entities, ML-predicted service types
+- **Address enrichment** — labels, entities with provenance and curation history, ML-predicted service types
 
 ### Authentication
 
@@ -55,9 +56,9 @@ Two modes, checked in order. Both auto-refresh access tokens — there is no sta
 ### Output Formats
 
 ```bash
-cipherowl-sr3 screen address <addr> --risk-config <config>              # JSON (default)
-cipherowl-sr3 screen address <addr> --risk-config <config> -f table     # human-readable columns
-cipherowl-sr3 screen address <addr> --risk-config <config> -q           # exit code only: 0 = call succeeded, not "clean"
+cipherowl-sr3 screen address <addr>              # JSON (default)
+cipherowl-sr3 screen address <addr> -f table     # human-readable columns
+cipherowl-sr3 screen address <addr> -q           # exit code only: 0 = call succeeded, not "clean"
 ```
 
 ### Keeping Up to Date
@@ -80,7 +81,7 @@ cipherowl-sr3 agent mcp                       # run as an MCP server over stdio
 cipherowl-sr3 agent mcp --print-config=<host> # emit a copy-pasteable install snippet
 ```
 
-**Tools exposed:** `capabilities`, `detect`, `screen`, `batch_screen`, `reason_risk`, `reason_exposures`, `metadata_labels`, `metadata_entities`, plus read-only Simple Case tools (`case_list`, `case_get`, `case_screenings`, `case_evidence`, `case_notes`, `case_audit`). All read-only; the `case_*` tools need case-management access (without it they return `FORBIDDEN`). Pass `risk_config` explicitly to the screening and reason tools (see the note under Quick Start). Output uses the same envelope as `cipherowl-sr3 ... -f json`, including `request_id` for correlation with server logs; address results also carry a `links` field.
+**Tools exposed:** `capabilities`, `detect`, `screen`, `batch_screen`, `reason_risk`, `reason_exposures`, `metadata_labels`, `metadata_entities`, plus read-only Simple Case tools (`case_list`, `case_get`, `case_screenings`, `case_evidence`, `case_notes`, `case_audit`). All read-only; the `case_*` tools need case-management access (without it they return `FORBIDDEN`). Omitting `risk_config` applies your organization's default (see the note under Quick Start). Output uses the same envelope as `cipherowl-sr3 ... -f json`, including `request_id` for correlation with server logs; address results also carry a `links` field.
 
 ### One-time setup
 
@@ -157,9 +158,9 @@ cipherowl-sr3 agent mcp --print-config=opencode   # generates the snippet above
 
 Ask your agent:
 
-> Use the cipherowl-sr3 `screen` tool on `0x296A0E3CE9f346033d21DD85282f5a1cfdbc4474` with risk_config `<config>` and report `foundRisk` verbatim.
+> Use the cipherowl-sr3 `screen` tool on `0x296A0E3CE9f346033d21DD85282f5a1cfdbc4474` and report `foundRisk` verbatim.
 
-Replace `<config>` with a name from `cipherowl-sr3 screen configs --chain evm`. Expected: `true` (this is a known illicit address). `0x202f3e2934067181cf9e35af508d682525b17b4c` should return `false`, meaning no risk found under that configuration.
+Expected: `true` (this is a known illicit address). `0x202f3e2934067181cf9e35af508d682525b17b4c` should return `false`, meaning no risk found under the applied configuration.
 
 ---
 
@@ -187,7 +188,7 @@ cipherowl-sr3 doctor
 Pin a version in CI:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | VERSION=2026.8.0 sh   # VERSION goes on the sh side
+curl -fsSL https://raw.githubusercontent.com/cipherowl-ai/cipherowl-sr3/main/scripts/install-sr3.sh | VERSION=2026.11.0 sh   # VERSION goes on the sh side
 ```
 
 ### Agent Guide
